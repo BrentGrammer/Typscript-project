@@ -4,12 +4,17 @@
  * The interface requires that the class that implement it must have a property location
  * which is an object holding two number props.  As long as it has this property, it eligible
  * The class may have other attributes as well.
+ * 
+ * You can optionally export the interface to implement it explicitly in the classes.
+ * This is not required, but may lead to more helpful error warnings from typescript.
  */
-interface Mappable {
+export interface Mappable {
   location: {
     lat: number;
     lng: number;
   };
+  // Must have this method and be responsible for what content will be displayed in popup window for marker
+  markerContent(): string;
 }
 
 export class CustomMap {
@@ -28,12 +33,21 @@ export class CustomMap {
 
   // as long as the argument passed in satisfies and is of type Mappable interface, it can be consumed by this method 
   addMarker(mappable: Mappable): void {
-    new google.maps.Marker({
+    const marker = new google.maps.Marker({
       map: this.googleMap,
       position: {
         lat: mappable.location.lat,
         lng: mappable.location.lng
       }
     });
+
+    marker.addListener('click', () => {
+      const infoWindow = new google.maps.InfoWindow({
+        // generating content dependant on the type passed in will be the responsibility of the mappable type passed in
+        content: mappable.markerContent()
+      });
+
+      infoWindow.open(this.googleMap, marker);
+    })
   }
 }
